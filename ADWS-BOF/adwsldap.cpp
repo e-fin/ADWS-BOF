@@ -1383,9 +1383,7 @@ extern "C" {
 		}
 		else {
 			/* Unknown opcode — log and skip to avoid corrupting output */
-			BeaconPrintf(CALLBACK_OUTPUT,
-				"[nbfse] unknown value opcode 0x%02X at pos %llu\n",
-				opcode, (u64)r->pos);
+
 		}
 
 		if (with_end) return 2;
@@ -2762,13 +2760,13 @@ extern "C" {
 			char* presp = (char*)xml.data;
 			if (presp) {
 				size_t plen = adws_strlen(presp);
-				BeaconPrintf(CALLBACK_OUTPUT, "=== RAW DECODED XML (len=%llu) ===\n", plen);
+				
 				for (size_t pi = 0; pi < plen; pi += 400) {
 					size_t chunk = plen - pi < 400 ? plen - pi : 400;
 					char tmp[401];
 					adws_memcpy(tmp, presp + pi, chunk);
 					tmp[chunk] = 0;
-					BeaconPrintf(CALLBACK_OUTPUT, "%s", tmp);
+					
 				}
 			}
 			buf_free(&raw_responses[ri]);
