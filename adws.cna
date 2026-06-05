@@ -1,0 +1,85 @@
+beacon_command_register(
+"adwsldapsearch", 
+"BOF - Perform LDAP search with ADWS.", 
+"adwsldapsearch --ip 10.0.0.1 --domain example.com --username user --password password --query (objectClass=user) --attrs sAMAccountName,description
+	with :
+		--ip			IP address of server running ADWS, typically domain controller.
+		--domain		Domain Name of the Domain you are querying.
+		--username		Username to use for authentication, use --domain to specify user domain.
+		--password		Password to use for authentication.
+		--query			LDAP Query, CNA handles spaces in arguments, dont need to use quotes.
+		--attrs			Attributes for LDAP query, provide none to choose *
+");
+
+alias adwsldapsearch {
+    local('$handle $data $path $ip $dn $username $password $attributes $query $args $i $opt $val $j');
+
+    $path   = script_resource("adwsldap.x64.o");
+    $handle = openf($path);
+    if ($handle is $null) {
+        berror($1, "Could not open file: " . $path);
+        return;
+    }
+    $data = readb($handle, lof($path));
+    closef($handle);
+    if (strlen($data) == 0) {
+        berror($1, "Failed to load BOF — check path");
+        return;
+    }
+
+    if (size(@_) == 1) {
+        berror($1, beacon_command_detail("adwsldapsearch"));
+        return;
+    }
+
+    $ip         = "";
+    $dn         = "";
+    $username   = "";
+    $password   = "";
+    $query      = "";
+    $attributes = "";
+
+    $i = 1;
+    while ($i < size(@_)) {
+        $opt = @_[$i];
+
+        # collect all tokens until the next -- flag as the value
+        $val = "";
+        $j = $i + 1;
+        while ($j <= size(@_) - 1) {
+            if (left(@_[$j], 2) eq "--") {
+                break;
+            }
+            if (strlen($val) > 0) { $val = $val . " "; }
+            $val = $val . @_[$j];
+            $j++;
+        }
+        $i = $j;
+
+        if ($opt eq "--ip") {
+            $ip = $val;
+        } else if ($opt eq "--domain") {
+            $dn = $val;
+        } else if ($opt eq "--username") {
+            $username = $val;
+        } else if ($opt eq "--password") {
+            $password = $val;
+        } else if ($opt eq "--query") {
+            $query = $val;
+        } else if ($opt eq "--attrs") {
+            $attributes = $val;
+        } else {
+            berror($1, "Unknown argument: " . $opt);
+            return;
+        }
+    }
+
+    if ($ip eq "")       { berror($1, "Missing --ip");       return; }
+    if ($dn eq "")       { berror($1, "Missing --domain");   return; }
+    if ($username eq "") { berror($1, "Missing --username"); return; }
+    if ($password eq "") { berror($1, "Missing --password"); return; }
+    if ($query eq "")    { berror($1, "Missing --query");    return; }
+
+    $args = bof_pack($1, "zzzzzz", $ip, $dn, $username, $password, $query, $attributes);
+    beacon_inline_execute($1, $data, "go", $args);
+}
