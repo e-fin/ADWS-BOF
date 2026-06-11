@@ -86,7 +86,7 @@ alias adwsldapsearch {
     }
 
     if ($ip eq "")       { berror($1, "Missing --ip");       return; }
-    if ($dn eq "")       { berror($1, "Missing --domain");   return; }
+    if ($domain eq "")       { berror($1, "Missing --domain");   return; }
     if ($query eq "")    { berror($1, "Missing --query");    return; }
 	if ($dn eq "")    { berror($1, "Missing --dn");    return; }
 

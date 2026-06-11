@@ -518,24 +518,25 @@ extern "C" {
 		adws_memcpy(n->target_name + 5, fqdn, flen + 1);
 
 		SEC_WINNT_AUTH_IDENTITY_A identity;
-		if (adws_strcmp(username,"NULL")==0) {
+		if (adws_strcmp(username, "NULL") == 0) {
 			identity = (SEC_WINNT_AUTH_IDENTITY_A)NULL;
-		}else{ 
-		adws_memset(&identity, 0, sizeof(identity));
-		identity.User = (u8*)username;
-		identity.UserLength = (u32)adws_strlen(username);
-		identity.Domain = domain ? (u8*)domain : NULL;
-		identity.DomainLength = domain ? (u32)adws_strlen(domain) : 0;
-		identity.Password = (u8*)password;
-		identity.PasswordLength = (u32)adws_strlen(password);
-		identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
+		}
+		else {
+			adws_memset(&identity, 0, sizeof(identity));
+			identity.User = (u8*)username;
+			identity.UserLength = (u32)adws_strlen(username);
+			identity.Domain = domain ? (u8*)domain : NULL;
+			identity.DomainLength = domain ? (u32)adws_strlen(domain) : 0;
+			identity.Password = (u8*)password;
+			identity.PasswordLength = (u32)adws_strlen(password);
+			identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
 		}
 		const char pkg[] = { 'N','T','L','M',0 };
 		TimeStamp exp;
 		pfn_AcquireCredHandle = (PFN_AcquireCredHandle)KERNEL32$GetProcAddress(KERNEL32$LoadLibraryA("secur32.dll"), "AcquireCredentialsHandleA");
 		i32 st = NULL;
 		if (adws_strcmp(username, "NULL") == 0) {
-			 st = pfn_AcquireCredHandle(NULL, (char*)pkg, SECPKG_CRED_OUTBOUND, NULL, NULL, NULL, NULL, &n->cred, &exp);
+			st = pfn_AcquireCredHandle(NULL, (char*)pkg, SECPKG_CRED_OUTBOUND, NULL, NULL, NULL, NULL, &n->cred, &exp);
 		}
 		else {
 			st = pfn_AcquireCredHandle(NULL, (char*)pkg, SECPKG_CRED_OUTBOUND, NULL, &identity, NULL, NULL, &n->cred, &exp);
@@ -960,7 +961,7 @@ extern "C" {
 		const u8* data;
 		size_t     len;
 		size_t     pos;
-		
+
 		char* dict_buf;
 		char** dict;        /* dict[i] = string for index i */
 		u32        dict_count;
@@ -1043,10 +1044,7 @@ extern "C" {
 	}
 	static int nbfse_decode_value(NbfseReader* r, u8 opcode, Buf* xml, int with_end);
 
-	static int nbfse_emit_text(NbfseReader* r, u8 opcode, Buf* xml) {
-		int with_end = (opcode & 1); /* odd opcodes have WithEndElement */
-		return nbfse_decode_value(r, opcode, xml, with_end);
-	}
+
 	static int nbfse_decode_value(NbfseReader* r, u8 opcode, Buf* xml, int with_end) {
 		u8 base = opcode & ~1u; /* mask off WithEndElement bit for paired opcodes */
 
@@ -1971,15 +1969,7 @@ extern "C" {
 		while (depth-- > 0) buf_push(out, 0x01);
 	}
 
-	/* ─── Tiny XML parser for ADWS responses --- */
 
-	static char* xml_skip_tag(char* p, char* end) {
-		while (p < end && *p != '>') p++;
-		return (p < end) ? p + 1 : NULL;
-	}
-
-	/* Find the opening tag "<localname" or "<prefix:localname".
-	   Returns pointer to the '>' (or start of attrs), or NULL. */
 	static char* xml_find_tag(char* xml, const char* local_name, int is_end) {
 		size_t llen = adws_strlen(local_name);
 		char* p = xml;
@@ -2117,14 +2107,6 @@ extern "C" {
 		return (char*)out.data;
 	}
 
-	/* Multi-key fill helper — replaces up to 8 keys in one pass */
-	static char* fill_template_multi(const char* tmpl, int n, ...) {
-		char* result = (char*)adws_alloc(adws_strlen(tmpl) + 1);
-		if (!result) return NULL;
-		adws_memcpy(result, tmpl, adws_strlen(tmpl) + 1);
-		(void)n; /* unused; kept for prototype clarity */
-		return result;
-	}
 
 	/* Helper: fill template with key-value pairs array */
 	static char* tpl_fill(const char* tmpl, const char** kvs, int nkv) {
@@ -2640,11 +2622,7 @@ extern "C" {
 		adws_free(obj->attrs);
 	}
 
-	void adws_result_free(AdwsResult* r) {
-		if (!r) return;
-		for (size_t i = 0;i < r->count;i++) free_object(&r->objects[i]);
-		adws_free(r->objects); adws_free(r);
-	}
+
 
 	/* Get first value of named attribute from an object (case-insensitive) */
 	const char* adws_attr_value(const AdwsObject* obj, const char* name) {
@@ -2768,13 +2746,13 @@ extern "C" {
 			char* presp = (char*)xml.data;
 			if (presp) {
 				size_t plen = adws_strlen(presp);
-				
+
 				for (size_t pi = 0; pi < plen; pi += 400) {
 					size_t chunk = plen - pi < 400 ? plen - pi : 400;
 					char tmp[401];
 					adws_memcpy(tmp, presp + pi, chunk);
 					tmp[chunk] = 0;
-					
+
 				}
 			}
 			buf_free(&raw_responses[ri]);
@@ -3075,155 +3053,7 @@ extern "C" {
 		return TRUE;
 	}
 
-	/* ── Get ------── */
-
-	AdwsObject* adws_get(AdwsClient* c, const char* dn, const char** attributes) {
-		int nattr = 0; if (attributes) while (attributes[nattr]) nattr++;
-		char* attr_xml = build_attr_list(attributes, nattr);
-		if (!attr_xml) return NULL;
-
-		char uuid[37]; generate_uuid(uuid);
-		Buf dn_esc = buf_new(); xml_escape_str(&dn_esc, dn, adws_strlen(dn)); buf_push(&dn_esc, 0);
-
-		const char* kvs[] = { "uuid",uuid,"fqdn",c->fqdn,"dn",(char*)dn_esc.data,"attributes",attr_xml };
-		char* xml = tpl_fill(kGetTpl, kvs, 8);
-		buf_free(&dn_esc); adws_free(attr_xml);
-		if (!xml) return NULL;
-
-		int ok = adws_send_request(c, xml); adws_free(xml);
-		if (!ok) return NULL;
-
-		char* resp = adws_recv_response(c);
-		if (!resp) return NULL;
-
-		AdwsError err; adws_memset(&err, 0, sizeof(err));
-		if (!check_soap_fault(resp, &err)) {
-			adws_free(resp); adws_free(err.code); adws_free(err.reason); return NULL;
-		}
-
-		char* body = xml_find_tag(resp, "Body", 0);
-		AdwsObject* obj = (AdwsObject*)adws_alloc(sizeof(AdwsObject));
-
-		*obj = body ? parse_object_node(body, resp + adws_strlen(resp)) : AdwsObject{ 0 };
-		adws_free(resp);
-		return obj;
-	}
-
-	void adws_object_free(AdwsObject* obj) {
-		if (!obj) return;
-		free_object(obj);
-		adws_free(obj);
-	}
-
-	/* ── Put ------── */
-
-	int adws_put(AdwsClient* c, const char* dn,
-		const char** attr_names, const char* const* const* attr_values,
-		const int* attr_nvalues, const int* attr_ops, int n_attrs)
-	{
-		Buf attrs = buf_new();
-		for (int i = 0;i < n_attrs;i++) {
-			char* frag = build_mod_xml(attr_names[i],
-				(const char**)attr_values[i], attr_nvalues[i],
-				NULL, NULL, 0, attr_ops[i]);
-			if (!frag) { buf_free(&attrs); return FALSE; }
-			buf_append_str(&attrs, frag); adws_free(frag);
-		}
-		buf_push(&attrs, 0);
-
-		char uuid[37]; generate_uuid(uuid);
-		Buf dn_esc = buf_new(); xml_escape_str(&dn_esc, dn, adws_strlen(dn)); buf_push(&dn_esc, 0);
-
-		const char* kvs[] = { "uuid",uuid,"fqdn",c->fqdn,"dn",(char*)dn_esc.data,"attributes",(char*)attrs.data };
-		char* xml = tpl_fill(kPutTpl, kvs, 8);
-		buf_free(&dn_esc); buf_free(&attrs);
-		if (!xml) return FALSE;
-
-		int ok = adws_send_request(c, xml); adws_free(xml);
-		if (!ok) return FALSE;
-
-		char* resp = adws_recv_response(c);
-		if (!resp) return FALSE;
-
-		AdwsError err; adws_memset(&err, 0, sizeof(err));
-		ok = check_soap_fault(resp, &err);
-		adws_free(resp); adws_free(err.code); adws_free(err.reason);
-		return ok;
-	}
-
-	/* ── Delete ---───────────────────────────── */
-
-	int adws_delete(AdwsClient* c, const char* dn) {
-		char uuid[37]; generate_uuid(uuid);
-		Buf dn_esc = buf_new(); xml_escape_str(&dn_esc, dn, adws_strlen(dn)); buf_push(&dn_esc, 0);
-		const char* kvs[] = { "uuid",uuid,"fqdn",c->fqdn,"dn",(char*)dn_esc.data };
-		char* xml = tpl_fill(kDeleteTpl, kvs, 6);
-		buf_free(&dn_esc);
-		if (!xml) return FALSE;
-		int ok = adws_send_request(c, xml); adws_free(xml);
-		if (!ok) return FALSE;
-		char* resp = adws_recv_response(c);
-		if (!resp) return FALSE;
-		AdwsError err; adws_memset(&err, 0, sizeof(err));
-		ok = check_soap_fault(resp, &err);
-		adws_free(resp); adws_free(err.code); adws_free(err.reason);
-		return ok;
-	}
-
-	/* ── Create ---───────────────────────────── */
-
-	int adws_create(AdwsClient* c, const char* dn, const char* object_class,
-		const char** attr_names, const char* const* const* attr_values,
-		const int* attr_nvalues, int n_attrs)
-	{
-		Buf attrs = buf_new();
-		for (int i = 0;i < n_attrs;i++) {
-			char* frag = build_mod_xml(attr_names[i],
-				(const char**)attr_values[i], attr_nvalues[i],
-				NULL, NULL, 0, 0);
-			if (!frag) { buf_free(&attrs); return FALSE; }
-			buf_append_str(&attrs, frag); adws_free(frag);
-		}
-		buf_push(&attrs, 0);
-
-		char uuid[37]; generate_uuid(uuid);
-		Buf dn_esc = buf_new(); xml_escape_str(&dn_esc, dn, adws_strlen(dn)); buf_push(&dn_esc, 0);
-		Buf oc_esc = buf_new(); xml_escape_str(&oc_esc, object_class, adws_strlen(object_class)); buf_push(&oc_esc, 0);
-
-		const char* kvs[] = { "uuid",uuid,"fqdn",c->fqdn,"dn",(char*)dn_esc.data,
-							 "object_class",(char*)oc_esc.data,"attributes",(char*)attrs.data };
-		char* xml = tpl_fill(kCreateTpl, kvs, 10);
-		buf_free(&dn_esc); buf_free(&oc_esc); buf_free(&attrs);
-		if (!xml) return FALSE;
-		int ok = adws_send_request(c, xml); adws_free(xml);
-		if (!ok) return FALSE;
-		char* resp = adws_recv_response(c);
-		if (!resp) return FALSE;
-		AdwsError err; adws_memset(&err, 0, sizeof(err));
-		ok = check_soap_fault(resp, &err);
-		adws_free(resp); adws_free(err.code); adws_free(err.reason);
-		return ok;
-	}
-
-	/* ── Move ------─ */
-
-	int adws_move(AdwsClient* c, const char* dn, const char* new_dn) {
-		char uuid[37]; generate_uuid(uuid);
-		Buf dn_esc = buf_new(); xml_escape_str(&dn_esc, dn, adws_strlen(dn)); buf_push(&dn_esc, 0);
-		Buf nd_esc = buf_new(); xml_escape_str(&nd_esc, new_dn, adws_strlen(new_dn)); buf_push(&nd_esc, 0);
-		const char* kvs[] = { "uuid",uuid,"fqdn",c->fqdn,"current_dn",(char*)dn_esc.data,"new_dn",(char*)nd_esc.data };
-		char* xml = tpl_fill(kMoveTpl, kvs, 8);
-		buf_free(&dn_esc); buf_free(&nd_esc);
-		if (!xml) return FALSE;
-		int ok = adws_send_request(c, xml); adws_free(xml);
-		if (!ok) return FALSE;
-		char* resp = adws_recv_response(c);
-		if (!resp) return FALSE;
-		AdwsError err; adws_memset(&err, 0, sizeof(err));
-		ok = check_soap_fault(resp, &err);
-		adws_free(resp); adws_free(err.code); adws_free(err.reason);
-		return ok;
-	}
+	
 
 	/* ─── GUID / SID parsing (matching BridgeHead reference) ─────────────────── */
 
@@ -3265,16 +3095,6 @@ extern "C" {
 		buf_push(&b, 0);
 		return (char*)b.data;
 	}
-
-
-
-
-	void adws_cleanup(void) {
-		if (pfn_WSACleanup) pfn_WSACleanup();
-	}
-
-	/* ─── Optional: simple print helper (uses WriteFile via kernel32) ────────── */
-
 
 
 	void go(char* args, int len) {
