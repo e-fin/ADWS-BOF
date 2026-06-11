@@ -13,12 +13,12 @@ beacon> adwsldapsearch
 	
 	Arguments:
 		--ip			IP address of server running ADWS, typically domain controller.
-		--domain			Domain Name of the Domain you are querying.
+		--domain		Domain Name of the Domain you are querying.
 		--username		(OPTIONAL)Username to use for authentication, use --domain to specify user domain. 
 		--password		(OPTIONAL) Password to use for authentication. (OPTIONAL)
 		--query			LDAP Query, CNA handles spaces in arguments, dont need to use quotes.
 		--attrs			(OPTIONAL)Attributes for LDAP query, provide none to choose * 
-		--dn            		Search Base for the LDAP Query 
+		--dn            Search Base for the LDAP Query 
 		
 	Notes:
 		- Do not wrap any arguments in quotes.
