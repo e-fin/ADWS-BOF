@@ -4,9 +4,35 @@ This repository is for a beacon object file that allos operators to query LDAP u
 
 This is still very much a work in progress
 
-## Example Usage
+## Usage
+
 ```
-[06/05 17:10:53] beacon> adwsldapsearch --ip 192.168.1.100 --domain lab.local --username administrator --password nicetry --query (&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=Domain Admins,CN=Users,DC=lab,DC=local))
+beacon> adwsldapsearch
+[-] Usage:
+	adwsldapsearch --ip 10.0.0.1 --domain example.com --username user --password password --query (objectClass=user) --attrs sAMAccountName,description --dn DC=lab,DC=local
+	
+	Arguments:
+		--ip			IP address of server running ADWS, typically domain controller.
+		--domain			Domain Name of the Domain you are querying.
+		--username		(OPTIONAL)Username to use for authentication, use --domain to specify user domain. 
+		--password		(OPTIONAL) Password to use for authentication. (OPTIONAL)
+		--query			LDAP Query, CNA handles spaces in arguments, dont need to use quotes.
+		--attrs			(OPTIONAL)Attributes for LDAP query, provide none to choose * 
+		--dn            		Search Base for the LDAP Query 
+		
+	Notes:
+		- Do not wrap any arguments in quotes.
+		- Arguments can be placed in any order.
+		- Providing no username or password will use current access token.
+```
+
+
+## Example Usage
+
+#### Provided Credentials, attributes set to *
+
+```
+[06/05 17:10:53] beacon> adwsldapsearch --ip 192.168.1.100 --domain lab.local --username administrator --password nicetry --query (&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=Domain Admins,CN=Users,DC=lab,DC=local)) --dn DC=lab,DC=local
 [06/05 17:10:53] [+] host called home, sent: 105470 bytes
 [06/05 17:10:53] [+] received output:
 [*] Object 1
@@ -138,10 +164,32 @@ This is still very much a work in progress
   distinguishedName             : CN=labadmin,CN=Users,DC=lab,DC=local
 ```
 
+#### No credentials (use current access token), specify attributes
+
+```
+[06/11 09:29:03] beacon> adwsldapsearch --ip 192.168.1.100 --domain lab.local --query (&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=Domain Admins,CN=Users,DC=lab,DC=local)) --dn DC=lab,DC=local --attrs samaccountname,objectsid
+[06/11 09:29:03] [+] host called home, sent: 105814 bytes
+[06/11 09:29:04] [+] received output:
+[*] Object 1
+  objectSid                     : S-1-5-21-1063646002-3733688200-3763894859-500
+  sAMAccountName                : Administrator
+
+[06/11 09:29:04] [+] received output:
+[*] Object 2
+  objectSid                     : S-1-5-21-1063646002-3733688200-3763894859-1106
+  sAMAccountName                : domainuser1
+
+[06/11 09:29:04] [+] received output:
+[*] Object 3
+  objectSid                     : S-1-5-21-1063646002-3733688200-3763894859-1111
+  sAMAccountName                : labadmin
+```
+
+
 ## TODO
 
-- [ ] Dervice DN from user provided domain (its currently hardcoded to my lab domain)
-- [ ] Authenticate with current access token
+- [x] user specify dn
+- [x] Authenticate with current access token
 - [ ] Specify FQDN or ip
 - [ ] Add feature to allow operator to specify * in attributes with other attributes (example: *,ntsecuritydescriptor)
 - [ ] Look into making output better

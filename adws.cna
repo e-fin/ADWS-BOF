@@ -1,14 +1,22 @@
 beacon_command_register(
 "adwsldapsearch", 
 "BOF - Perform LDAP search with ADWS.", 
-"adwsldapsearch --ip 10.0.0.1 --domain example.com --username user --password password --query (objectClass=user) --attrs sAMAccountName,description
-	with :
+"Usage:
+	adwsldapsearch --ip 10.0.0.1 --domain example.com --username user --password password --query (objectClass=user) --attrs sAMAccountName,description --dn DC=lab,DC=local
+	
+	Arguments:
 		--ip			IP address of server running ADWS, typically domain controller.
-		--domain		Domain Name of the Domain you are querying.
-		--username		Username to use for authentication, use --domain to specify user domain.
-		--password		Password to use for authentication.
+		--domain			Domain Name of the Domain you are querying.
+		--username		(OPTIONAL)Username to use for authentication, use --domain to specify user domain. 
+		--password		(OPTIONAL) Password to use for authentication. (OPTIONAL)
 		--query			LDAP Query, CNA handles spaces in arguments, dont need to use quotes.
-		--attrs			Attributes for LDAP query, provide none to choose *
+		--attrs			(OPTIONAL)Attributes for LDAP query, provide none to choose * 
+		--dn            		Search Base for the LDAP Query 
+		
+	Notes:
+		- Do not wrap any arguments in quotes.
+		- Arguments can be placed in any order.
+		- Providing no username or password will use current access token.
 ");
 
 alias adwsldapsearch {
