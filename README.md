@@ -2,7 +2,11 @@
 
 This repository is for a beacon object file that allos operators to query LDAP using Active Directory Web Services (ADWS).
 
-This is still very much a work in progress
+Currently it supports using the existing access token, in addition to accepting user supplied credentials.
+
+Big shoutout to https://github.com/ZakiPedio/BridgeHead/. Was working on my own C implementation for ADWS, but ZakiPedio released a C++ library which I used heavily when creating this C implementation that was compatible with BOFs.
+
+This is still very much a work in progress, i have a list of things at the bottom im looking to add. PRs welcome.
 
 ## Usage
 
