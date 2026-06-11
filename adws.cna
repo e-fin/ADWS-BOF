@@ -12,7 +12,7 @@ beacon_command_register(
 ");
 
 alias adwsldapsearch {
-    local('$handle $data $path $ip $dn $username $password $attributes $query $args $i $opt $val $j');
+    local('$handle $data $path $ip $dn $username $password $attributes $query $dn $domain $args $i $opt $val $j');
 
     $path   = script_resource("adwsldap.x64.o");
     $handle = openf($path);
@@ -33,11 +33,12 @@ alias adwsldapsearch {
     }
 
     $ip         = "";
-    $dn         = "";
-    $username   = "";
-    $password   = "";
+    $domain         = "";
+    $username   = "NULL";
+    $password   = "NULL";
     $query      = "";
     $attributes = "";
+	$dn = "";
 
     $i = 1;
     while ($i < size(@_)) {
@@ -59,7 +60,7 @@ alias adwsldapsearch {
         if ($opt eq "--ip") {
             $ip = $val;
         } else if ($opt eq "--domain") {
-            $dn = $val;
+            $domain = $val;
         } else if ($opt eq "--username") {
             $username = $val;
         } else if ($opt eq "--password") {
@@ -68,6 +69,8 @@ alias adwsldapsearch {
             $query = $val;
         } else if ($opt eq "--attrs") {
             $attributes = $val;
+		} else if ($opt eq "--dn") {
+            $dn = $val;
         } else {
             berror($1, "Unknown argument: " . $opt);
             return;
@@ -76,10 +79,9 @@ alias adwsldapsearch {
 
     if ($ip eq "")       { berror($1, "Missing --ip");       return; }
     if ($dn eq "")       { berror($1, "Missing --domain");   return; }
-    if ($username eq "") { berror($1, "Missing --username"); return; }
-    if ($password eq "") { berror($1, "Missing --password"); return; }
     if ($query eq "")    { berror($1, "Missing --query");    return; }
+	if ($dn eq "")    { berror($1, "Missing --dn");    return; }
 
-    $args = bof_pack($1, "zzzzzz", $ip, $dn, $username, $password, $query, $attributes);
+    $args = bof_pack($1, "zzzzzzz", $ip, $domain, $username, $password, $query, $attributes,$dn);
     beacon_inline_execute($1, $data, "go", $args);
 }

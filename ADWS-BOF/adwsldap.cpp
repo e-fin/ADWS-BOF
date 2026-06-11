@@ -518,6 +518,9 @@ extern "C" {
 		adws_memcpy(n->target_name + 5, fqdn, flen + 1);
 
 		SEC_WINNT_AUTH_IDENTITY_A identity;
+		if (adws_strcmp(username,"NULL")==0) {
+			identity = (SEC_WINNT_AUTH_IDENTITY_A)NULL;
+		}else{ 
 		adws_memset(&identity, 0, sizeof(identity));
 		identity.User = (u8*)username;
 		identity.UserLength = (u32)adws_strlen(username);
@@ -526,12 +529,17 @@ extern "C" {
 		identity.Password = (u8*)password;
 		identity.PasswordLength = (u32)adws_strlen(password);
 		identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
-
+		}
 		const char pkg[] = { 'N','T','L','M',0 };
 		TimeStamp exp;
 		pfn_AcquireCredHandle = (PFN_AcquireCredHandle)KERNEL32$GetProcAddress(KERNEL32$LoadLibraryA("secur32.dll"), "AcquireCredentialsHandleA");
-		i32 st = pfn_AcquireCredHandle(NULL, (char*)pkg, SECPKG_CRED_OUTBOUND, NULL,
-			&identity, NULL, NULL, &n->cred, &exp);
+		i32 st = NULL;
+		if (adws_strcmp(username, "NULL") == 0) {
+			 st = pfn_AcquireCredHandle(NULL, (char*)pkg, SECPKG_CRED_OUTBOUND, NULL, NULL, NULL, NULL, &n->cred, &exp);
+		}
+		else {
+			st = pfn_AcquireCredHandle(NULL, (char*)pkg, SECPKG_CRED_OUTBOUND, NULL, &identity, NULL, NULL, &n->cred, &exp);
+		}
 		return (st == SEC_E_OK);
 	}
 
@@ -3281,6 +3289,7 @@ extern "C" {
 		char* pass = BeaconDataExtract(&parser, NULL);
 		char* query = BeaconDataExtract(&parser, NULL);
 		char* attrs_str = BeaconDataExtract(&parser, NULL);
+		char* dn = BeaconDataExtract(&parser, NULL);
 
 		char* attr_ptrs[64];
 		int   attr_count = 0;
@@ -3309,7 +3318,7 @@ extern "C" {
 
 		AdwsResult result;
 		adws_memset(&result, 0, sizeof(result));
-		adws_enumerate(c, query, attrs, "DC=lab,DC=local", collect_callback, &result, 100000);
+		adws_enumerate(c, query, attrs, dn, collect_callback, &result, 100000);
 
 		for (size_t i = 0; i < result.count; i++) {
 			AdwsObject* obj = &result.objects[i];
