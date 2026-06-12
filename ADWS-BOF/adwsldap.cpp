@@ -1,6 +1,6 @@
 #include <Windows.h>
 #include "base\helpers.h"
-
+#include <dsgetdc.h>
 #ifdef _DEBUG
 #undef DECLSPEC_IMPORT
 #define DECLSPEC_IMPORT
@@ -149,6 +149,7 @@ extern "C" {
 		void* ai_next;
 	} addrinfo;
 
+	typedef DWORD(__stdcall* PFN_DsGetDcNameA)(LPCSTR, LPCSTR, GUID*, LPCSTR, ULONG, PDOMAIN_CONTROLLER_INFOA*);
 	typedef i32(__stdcall* PFN_WSAStartup)(u16, void*);
 	typedef void(__stdcall* PFN_WSACleanup)(void);
 	typedef SOCKET(__stdcall* PFN_socket)(i32, i32, i32);
@@ -418,6 +419,8 @@ extern "C" {
 	static PFN_QueryCtxAttr      pfn_QueryCtxAttr;
 	static PFN_FreeCredHandle    pfn_FreeCredHandle;
 	static PFN_DeleteSecCtx      pfn_DeleteSecCtx;
+
+	static PFN_DsGetDcNameA     pfn_DsGetDcNameA;
 
 	/* ─── TCP socket ---───────────────────────── */
 
@@ -3053,7 +3056,7 @@ extern "C" {
 		return TRUE;
 	}
 
-	
+
 
 	/* ─── GUID / SID parsing (matching BridgeHead reference) ─────────────────── */
 
@@ -3133,6 +3136,24 @@ extern "C" {
 
 		const char** attrs = (attr_count > 0) ? (const char**)attr_ptrs : NULL;
 
+		if (adws_strcmp(ip, "NULL") == 0) {
+			PDOMAIN_CONTROLLER_INFOA pDCI;
+			pfn_DsGetDcNameA = (PFN_DsGetDcNameA)KERNEL32$GetProcAddress(KERNEL32$LoadLibraryA("Netapi32.dll"), "DsGetDcNameA");
+			DWORD ret = pfn_DsGetDcNameA(NULL, NULL, NULL, NULL, DS_RETURN_DNS_NAME, &pDCI);
+			if (ret == ERROR_SUCCESS) {
+				//printf("DC: %s\n", pDCI->DomainControllerName);
+				ip = pDCI->DomainControllerAddress+2;
+				//printf("Address: %s\n", addr);
+				//printf("Address: %s\n", addr + 2);
+				//while (*addr == '\\') addr++;
+				//printf("Address: %s\n", addr);
+				//NetApiBufferFree(pDCI);
+			}
+			else {
+				BeaconPrintf(CALLBACK_OUTPUT, "Cant Find DC IP Address, Specify with --ip");
+				return;
+			}
+		}
 		AdwsClient* c = adws_connect(ip, ip, domain, user, pass, "Enumeration", 120000);
 		if (!c) { return; }
 
