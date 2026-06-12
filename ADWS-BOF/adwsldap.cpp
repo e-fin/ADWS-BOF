@@ -3141,13 +3141,7 @@ extern "C" {
 			pfn_DsGetDcNameA = (PFN_DsGetDcNameA)KERNEL32$GetProcAddress(KERNEL32$LoadLibraryA("Netapi32.dll"), "DsGetDcNameA");
 			DWORD ret = pfn_DsGetDcNameA(NULL, NULL, NULL, NULL, DS_RETURN_DNS_NAME, &pDCI);
 			if (ret == ERROR_SUCCESS) {
-				//printf("DC: %s\n", pDCI->DomainControllerName);
 				ip = pDCI->DomainControllerAddress+2;
-				//printf("Address: %s\n", addr);
-				//printf("Address: %s\n", addr + 2);
-				//while (*addr == '\\') addr++;
-				//printf("Address: %s\n", addr);
-				//NetApiBufferFree(pDCI);
 			}
 			else {
 				BeaconPrintf(CALLBACK_OUTPUT, "Cant Find DC IP Address, Specify with --ip");
@@ -3176,11 +3170,6 @@ extern "C" {
 
 			for (size_t j = 0; j < obj->attr_count; j++) {
 				AdwsAttr* attr = &obj->attrs[j];
-				if (adws_strcmp(attr->name, "user") == 0) continue;
-				if (adws_strcmp(attr->name, "computer") == 0) continue;
-				if (adws_strcmp(attr->name, "objectReferenceProperty") == 0) continue;
-				if (adws_strcmp(attr->name, "value") == 0) continue;
-				if (attr->value_count == 0) continue;
 
 				for (size_t k = 0; k < attr->value_count; k++) {
 					const char* val = attr->values[k] ? attr->values[k] : "(null)";
