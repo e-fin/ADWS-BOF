@@ -4,6 +4,8 @@ This repository is for a beacon object file that allos operators to query LDAP u
 
 Currently it supports using the existing access token, in addition to accepting user supplied credentials.
 
+Domain Controller IP is determined automatically, if it cant be found or can be reached, specify with ```--ip```
+
 Big shoutout to https://github.com/ZakiPedio/BridgeHead/. Was working on my own C implementation for ADWS, but ZakiPedio released a C++ library which I used heavily when creating this C implementation that was compatible with BOFs.
 
 This is still very much a work in progress, i have a list of things at the bottom im looking to add. PRs welcome.
@@ -189,12 +191,32 @@ beacon> adwsldapsearch
   sAMAccountName                : labadmin
 ```
 
+#### No credentials (use current access token), specify attributes, automatically resolve DC IP
+
+```
+[06/12 12:34:21] beacon> adwsldapsearch  --domain lab.local --query (&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=Domain Admins,CN=Users,DC=lab,DC=local)) --dn DC=lab,DC=local --attrs samaccountname,objectsid
+[06/12 12:34:21] [+] host called home, sent: 93472 bytes
+[06/12 12:34:22] [+] received output:
+[*] Object 1
+  objectSid                     : S-1-5-21-1063646002-3733688200-3763894859-500
+  sAMAccountName                : Administrator
+
+[06/12 12:34:22] [+] received output:
+[*] Object 2
+  objectSid                     : S-1-5-21-1063646002-3733688200-3763894859-1106
+  sAMAccountName                : domainuser1
+
+[06/12 12:34:22] [+] received output:
+[*] Object 3
+  objectSid                     : S-1-5-21-1063646002-3733688200-3763894859-1111
+  sAMAccountName                : labadmin
+```
 
 ## TODO
 
 - [x] user specify dn
 - [x] Authenticate with current access token
-- [ ] Specify FQDN or ip
+- [x] Auto resolve DC
 - [ ] Add feature to allow operator to specify * in attributes with other attributes (example: *,ntsecuritydescriptor)
 - [ ] Look into making output better
 - [ ] Create complimentary Python script to convert output into BH JSON for ingestion

@@ -5,7 +5,7 @@ beacon_command_register(
 	adwsldapsearch --ip 10.0.0.1 --domain example.com --username user --password password --query (objectClass=user) --attrs sAMAccountName,description --dn DC=lab,DC=local
 	
 	Arguments:
-		--ip			IP address of server running ADWS, typically domain controller.
+		--ip			(OPTIONAL) IP address of server running ADWS, typically domain controller.
 		--domain			Domain Name of the Domain you are querying.
 		--username		(OPTIONAL)Username to use for authentication, use --domain to specify user domain. 
 		--password		(OPTIONAL) Password to use for authentication. (OPTIONAL)
@@ -17,6 +17,7 @@ beacon_command_register(
 		- Do not wrap any arguments in quotes.
 		- Arguments can be placed in any order.
 		- Providing no username or password will use current access token.
+		- Providing no IP will automatically determine DC IP.
 ");
 
 alias adwsldapsearch {
